@@ -1,3 +1,5 @@
-from django.test import TestCase
+from rest_framework.pagination import PageNumberPagination
 
-# Create your tests here.
+
+class PageLimitPagination(PageNumberPagination):
+    page_size_query_param = 'limit'

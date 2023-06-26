@@ -13,3 +13,4 @@ psycopg2-binary==2.9.6
 Pillow 
 PyYAML==6.0
 python-dotenv==1.0.0
+django-import-export==3.2.0
