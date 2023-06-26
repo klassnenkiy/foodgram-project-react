@@ -82,7 +82,9 @@ class SubscribeAPIView(APIView):
             user=request.user,
         )
         serializer = SubscribeSerializer(
-                queryset, context={'request': request})
+            queryset,
+            context={'request': request}
+        )
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED,
@@ -176,8 +178,8 @@ class DownloadShoppingCart(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         ingredients = IngredientInRecipe.objects.filter(
             recipe__shopping_cart__cart_owner=user).values(
-             'ingredient__name', 'ingredient__measurement_unit').annotate(
-                 amount=Sum('amount')).order_by()
+                'ingredient__name', 'ingredient__measurement_unit').annotate(
+                    amount=Sum('amount')).order_by()
 
         text = 'Список покупок:\n\n'
         for item in ingredients:
