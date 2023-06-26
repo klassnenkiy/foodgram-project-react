@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db import models
 from users.models import User
 
@@ -85,9 +84,10 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         constraints = [
-            models.UniqueConstraint(fields=['author', 'name'],
-                                    name='unique_author_recipename'
-        )
+            models.UniqueConstraint(
+                fields=['author', 'name'],
+                name='unique_author_recipename',
+            )
         ]
 
     def __str__(self):

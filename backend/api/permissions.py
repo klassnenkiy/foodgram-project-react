@@ -14,4 +14,4 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
             or request.user.is_authenticated
             and request.user.is_active
             and (request.user == obj.author
-                or request.user.is_staff))
+                 or request.user.is_staff))

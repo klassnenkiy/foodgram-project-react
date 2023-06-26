@@ -1,10 +1,8 @@
 import base64
-
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
-
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe, User
@@ -112,7 +110,10 @@ class UserSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         if user.is_anonymous:
             return False
-        return Subscribe.objects.filter(user=user, author=obj).exists()
+        return Subscribe.objects.filter(
+            user=user,
+            author=obj
+        ).exists()
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):

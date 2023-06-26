@@ -2,7 +2,7 @@ from django.db.models import Sum
 from django.shortcuts import HttpResponse, get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from rest_framework import filters, mixins, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -12,7 +12,7 @@ from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe, User
 from .mixins import CreateDestroyViewSet
-from .filters import RecipeFilter
+from .filters import IngredientSearchFilter, RecipeFilter
 from .paginators import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
@@ -43,7 +43,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (IngredientSearchFilter,)
     search_fields = ('^name',)
 
 
@@ -59,19 +59,18 @@ class SubscriptionsViewSet(viewsets.ModelViewSet):
 
 class SubscribeAPIView(APIView):
     def post(self, request, author_id):
-        user = request.user
         author = get_object_or_404(
             User,
             id=author_id
         )
-        if user == author:
+        if request.user == author:
             return Response(
                 {'errors': 'Вы не можете подписаться на самого себя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         subscription = Subscribe.objects.filter(
             author=author,
-            user=user,
+            user=request.user,
         )
         if subscription.exists():
             return Response(
@@ -80,7 +79,7 @@ class SubscribeAPIView(APIView):
             )
         queryset = Subscribe.objects.create(
             author=author,
-            user=user,
+            user=request.user,
         )
         serializer = SubscribeSerializer(
                 queryset, context={'request': request})
