@@ -1,3 +1,7 @@
-from django.db import models
+from rest_framework import mixins, viewsets
 
-# Create your models here.
+
+class CreateDestroyViewSet(mixins.CreateModelMixin,
+                           mixins.DestroyModelMixin,
+                           viewsets.GenericViewSet):
+    pass

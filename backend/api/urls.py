@@ -13,7 +13,6 @@ router.register(
 router.register(
     'users/subscriptions',
     views.SubscriptionsViewSet, basename='subscriptions')
-router.register('users', views.MyUserViewSet, basename='users')
 router.register('tags', views.TagViewSet, basename='tags')
 router.register('ingredients', views.IngredientViewSet, basename='ingredients')
 router.register(

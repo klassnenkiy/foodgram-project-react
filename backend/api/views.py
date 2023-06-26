@@ -11,19 +11,13 @@ from rest_framework.views import APIView
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe, User
-
+from .mixins import CreateDestroyViewSet
 from .filters import RecipeFilter
 from .paginators import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
                           RecipeSerializer, ShoppingCartSerializer,
                           SubscribeSerializer, TagSerializer)
-
-
-class CreateDestroyViewSet(mixins.CreateModelMixin,
-                           mixins.DestroyModelMixin,
-                           viewsets.GenericViewSet):
-    pass
 
 
 class MyUserViewSet(UserViewSet):
