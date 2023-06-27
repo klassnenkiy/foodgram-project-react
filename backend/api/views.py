@@ -161,8 +161,8 @@ class DownloadShoppingCart(APIView):
         text = 'Список покупок:\n\n'
         for item in ingredients:
             text += (f'{item["ingredient__name"]}: '
-                    f'{item["total_amount"]} '
-                    f'{item["ingredient__measurement_unit"]}\n')
+                     f'{item["total_amount"]} '
+                     f'{item["ingredient__measurement_unit"]}\n')
 
         response = HttpResponse(text, content_type='text/plain')
         filename = 'shopping_list.txt'

@@ -84,11 +84,11 @@ class Recipe(models.Model):
         ordering = ('-pub_date',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        constraints = [ 
-            models.UniqueConstraint( 
-                fields=['author', 'name'], 
-                name='unique_author_recipename', 
-            ) 
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'name'],
+                name='unique_author_recipename',
+            )
         ]
 
     def __str__(self):
@@ -160,7 +160,6 @@ class ShoppingCart(models.Model):
         verbose_name='Рецепт',
         related_name='+',
     )
-
 
     class Meta:
         verbose_name = 'Список покупок'

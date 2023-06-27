@@ -258,7 +258,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         new_ingredients = self.initial_data.get('ingredients')
         super().update(instance, validated_data)
         self.create_or_update_ingredients(instance, new_ingredients)
-        instance.tags.clear()    
+        instance.tags.clear()
         instance.tags.set(new_tags)
         return instance
 
@@ -297,4 +297,3 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
             instance.recipe,
             context={'request': request}
         ).data
-    
