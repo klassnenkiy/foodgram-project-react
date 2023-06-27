@@ -220,8 +220,13 @@ class RecipeSerializer(serializers.ModelSerializer):
         return IngredientInRecipeSerializer(queryset, many=True).data
 
     def validate(self, data):
+        self.validate_tags(data)
+        self.validate_ingredients(data)
+        self.validate_cooking_time(data)
+        return data
+
+    def validate_tags(self, data):
         tags = self.initial_data.get('tags')
-        ingredients = self.initial_data.get('ingredients')
         if not tags:
             raise serializers.ValidationError({
                 'tags': 'Кажется вы забыли указать тэги'})
@@ -230,6 +235,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             if not Tag.objects.filter(pk=tag).exists():
                 raise ValidationError(f'{tag} - Такого тэга не существует')
 
+    def validate_ingredients(self, data):
+        ingredients = self.initial_data.get('ingredients')
         if len(ingredients) < 1:
             raise ValidationError(
                 'Блюдо должно содержать хотя бы 1 ингредиент')
@@ -241,20 +248,20 @@ class RecipeSerializer(serializers.ModelSerializer):
             if not Ingredient.objects.filter(pk=ingredient_id).exists():
                 raise ValidationError(
                     f'{ingredient_id}- ингредиент с таким id не найден')
-            if id in unique_list:
+            if ingredient_id in unique_list:
                 raise ValidationError(
                     f'{ingredient_id}- дублирующийся ингредиент')
-            unique_list.append(id)
+            unique_list.append(ingredient_id)
             ingredient_amount = ingredient.get('amount')
             if ingredient_amount < 1:
                 raise ValidationError(
                     f'Количество {ingredient} должно быть больше 1')
 
+    def validate_cooking_time(self, data):
         cooking_time = data.get('cooking_time')
         if not cooking_time or int(cooking_time) <= 0:
             raise serializers.ValidationError({
                 'cooking_time': 'Укажите время приготовления'})
-        return data
 
     def create(self, validated_data):
         tags = self.initial_data.get('tags')
