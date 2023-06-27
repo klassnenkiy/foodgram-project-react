@@ -1,6 +1,7 @@
-from api import views
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
+from api import views
 
 app_name = 'api'
 
@@ -22,9 +23,11 @@ router.register(
 urlpatterns = [
     path(
         'recipes/download_shopping_cart/',
-        views.DownloadShoppingCart.as_view()),
+        views.DownloadShoppingCart.as_view(),
+        name='download_shopping_cart'
+    ),
     path('', include(router.urls)),
     path('', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
-    path('users/<int:author_id>/subscribe/', views.SubscribeAPIView.as_view())
+    path('users/<int:author_id>/subscribe/', views.SubscribeAPIView.as_view(), name='subscribe'),
 ]

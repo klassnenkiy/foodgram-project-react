@@ -1,4 +1,5 @@
 from django.db import models
+
 from users.models import User
 
 
@@ -50,7 +51,7 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name='recipe',
+        related_name='recipes',
     )
     name = models.CharField(
         verbose_name='Название',
@@ -83,12 +84,12 @@ class Recipe(models.Model):
         ordering = ('-pub_date',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['author', 'name'],
+                fields=('author', 'name',),
                 name='unique_author_recipename',
             )
-        ]
+        )
 
     def __str__(self):
         return self.name
@@ -111,12 +112,18 @@ class IngredientInRecipe(models.Model):
         verbose_name='Количество в рецепте',
     )
 
-    def __str__(self):
-        return self.recipe.name
-
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецепте'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('ingredient', 'recipe',),
+                name='unique_ingredient_recipe',
+            ),
+        )
+
+    def __str__(self):
+        return self.recipe.name
 
 
 class Favorite(models.Model):
@@ -134,6 +141,12 @@ class Favorite(models.Model):
     class Meta:
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('recipe_lover', 'recipe',),
+                name='unique_recipe_lover_recipe',
+            ),
+        )
 
 
 class ShoppingCart(models.Model):
@@ -148,9 +161,14 @@ class ShoppingCart(models.Model):
         related_name='+',
     )
 
-    def __str__(self):
-        return self.recipe.name
 
     class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
+        constraints = (
+            models.UniqueConstraint(fields=('cart_owner', 'recipe',),
+                                    name='unique_cart_owner_recipe')
+        )
+
+    def __str__(self):
+        return self.recipe.name

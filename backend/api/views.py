@@ -2,26 +2,24 @@ from django.db.models import Sum
 from django.shortcuts import HttpResponse, get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
-                            ShoppingCart, Tag)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
+                            ShoppingCart, Tag)
 from users.models import Subscribe, User
 
 from .filters import IngredientSearchFilter, RecipeFilter
-from .mixins import CreateDestroyViewSet
+from .mixins import CreateDestroyViewSet, DeleteActionMixin
 from .paginators import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
                           RecipeSerializer, ShoppingCartSerializer,
                           SubscribeSerializer, TagSerializer)
 
-
-class MyUserViewSet(UserViewSet):
-    pagination_class = PageLimitPagination
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -106,7 +104,7 @@ class SubscribeAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         subscription.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):
@@ -129,43 +127,24 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        recipe = self.kwargs.get('recipe_id')
-        recipe_lover = self.request.user
-        if not Favorite.objects.filter(recipe=recipe,
-                                       recipe_lover=recipe_lover).exists():
-            return Response({'errors': 'Рецепт не в избранном'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        get_object_or_404(
-            Favorite,
-            recipe_lover=recipe_lover,
-            recipe=recipe).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return self.delete_action(request, recipe_id)
 
 
-class ShoppingCartViewSet(CreateDestroyViewSet):
+class ShoppingCartViewSet(CreateDestroyViewSet, DeleteActionMixin):
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer
+    error_message = 'Рецепт не добавлен в список покупок'
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         recipe = get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
         context.update({'recipe': recipe})
-        context.update({'cart_owner': self.request.user})
+        context.update({'owner': self.request.user})
         return context
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        recipe = self.kwargs.get('recipe_id')
-        cart_owner = self.request.user
-        if not ShoppingCart.objects.filter(recipe=recipe,
-                                           cart_owner=cart_owner).exists():
-            return Response({'errors': 'Рецепт не добавлен в список покупок'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        get_object_or_404(
-            ShoppingCart,
-            cart_owner=cart_owner,
-            recipe=recipe).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return self.delete_action(request, recipe_id)
 
 
 class DownloadShoppingCart(APIView):
@@ -179,13 +158,13 @@ class DownloadShoppingCart(APIView):
         ingredients = IngredientInRecipe.objects.filter(
             recipe__shopping_cart__cart_owner=user).values(
                 'ingredient__name', 'ingredient__measurement_unit').annotate(
-                    amount=Sum('amount')).order_by()
+                    total_amount=Sum('amount')).order_by()
 
         text = 'Список покупок:\n\n'
         for item in ingredients:
             text += (f'{item["ingredient__name"]}: '
-                     f'{item["amount"]} '
-                     f'{item["ingredient__measurement_unit"]}\n')
+                    f'{item["total_amount"]} '
+                    f'{item["ingredient__measurement_unit"]}\n')
 
         response = HttpResponse(text, content_type='text/plain')
         filename = 'shopping_list.txt'
