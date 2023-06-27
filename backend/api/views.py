@@ -20,7 +20,6 @@ from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
                           SubscribeSerializer, TagSerializer)
 
 
-
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     pagination_class = PageLimitPagination
