@@ -1,7 +1,6 @@
 from django.db.models import Sum
 from django.shortcuts import HttpResponse, get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -104,7 +103,7 @@ class SubscribeAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         subscription.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):
