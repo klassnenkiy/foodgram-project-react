@@ -120,9 +120,6 @@ jobs:
           target: "foodgram"
       - name: Executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
-        env:
-          DOCKER_LOGIN: ${{ secrets.DOCKER_USERNAME }}
-          NGINX_PORT: 9000
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
@@ -130,15 +127,12 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd foodgram
-            # Выполняет pull образов с Docker Hub
-            sudo docker compose -f docker-compose.production.yml pull
-            # Перезапускает все контейнеры в Docker Compose
-            sudo docker compose -f docker-compose.production.yml down
-            sudo docker compose -f docker-compose.production.yml up -d
-            # Выполняет миграции и сбор статики
-            sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
-            sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
-            sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /static/
+            sudo docker compose -f docker-compose.yml pull
+            sudo docker compose -f docker-compose.yml down
+            sudo docker compose -f docker-compose.yml up -d
+            sudo docker compose -f docker-compose.yml exec backend python manage.py migrate
+            sudo docker compose -f docker-compose.yml exec backend python manage.py collectstatic
+            sudo docker compose -f docker-compose.yml exec backend cp -r /app/collected_static/. /static/
 
   send_message:
     name: Send message to telegram
