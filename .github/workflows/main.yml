@@ -120,6 +120,9 @@ jobs:
           target: "foodgram"
       - name: Executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
+        env:
+          DOCKER_LOGIN: ${{ secrets.DOCKER_USERNAME }}
+          NGINX_PORT: 9080
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
