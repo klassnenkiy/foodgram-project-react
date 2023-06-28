@@ -4,7 +4,6 @@ from rest_framework.validators import ValidationError
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe, User
-
 from .fields import Base64ImageField
 
 
@@ -207,7 +206,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 raise ValidationError(f'{tag} - Такого тэга не существует')
 
     def validate_ingredients(self, data):
-        ingredients = self.initial_data.get('ingredients')
+        ingredients = data.get('ingredients')
         if len(ingredients) < 1:
             raise ValidationError(
                 'Блюдо должно содержать хотя бы 1 ингредиент')
@@ -245,8 +244,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientInRecipe.objects.bulk_create(bulk_create_data)
 
     def create(self, validated_data):
-        tags = self.initial_data.get('tags')
-        ingredients = self.initial_data.get('ingredients')
+        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('recipe')
         new_recipe = Recipe.objects.create(
             **validated_data, author=self.context.get('request').user)
         new_recipe.tags.add(*tags)
@@ -254,8 +253,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         return new_recipe
 
     def update(self, instance, validated_data):
-        new_tags = self.initial_data.get('tags')
-        new_ingredients = self.initial_data.get('ingredients')
+        new_tags = validated_data.pop('tags')
+        new_ingredients = validated_data.pop('ingredients')
         super().update(instance, validated_data)
         self.create_or_update_ingredients(instance, new_ingredients)
         instance.tags.clear()
