@@ -96,6 +96,5 @@ docker compose exec backend python manage.py collectstatic --noinput
 * Автор:
 Станислав Тюлягин
 
-
 * Ревьюер:
 Михаил Иванов
