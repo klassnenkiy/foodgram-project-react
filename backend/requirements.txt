@@ -12,6 +12,6 @@ webcolors==1.11.1
 psycopg2-binary==2.9.6
 Pillow 
 PyYAML==6.0
-python-dotenv==1.0.0
+python-dotenv==0.21.1
 django-import-export==3.2.0
 gunicorn==20.1.0
