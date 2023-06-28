@@ -17,7 +17,7 @@ services:
   backend:
     container_name: foodgram_backend
     env_file: .env
-    image: ${DOCKER_LOGIN}/foodgram_backend
+    image: tyulyagin/foodgram_backend
     volumes:
       - static:/static
       - media:/app/media
@@ -28,7 +28,7 @@ services:
   frontend:
     container_name: foodgram_frontend
     env_file: .env
-    image: ${DOCKER_LOGIN}/foodgram_frontend
+    image: tyulyagin/foodgram_frontend
     command: cp -r /app/build/. /static/
     volumes:
       - static:/static
@@ -36,12 +36,12 @@ services:
   gateway:
     container_name: foodgram_gateway
     env_file: .env
-    image: ${DOCKER_LOGIN}/foodgram_gateway
+    image: tyulyagin/foodgram_gateway
     volumes:
       - static:/static
       - media:/media
     ports:
-      - ${NGINX_PORT}:80
+      - 9080:80
     depends_on:
       - backend
     restart: always
