@@ -194,7 +194,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_in_shopping_cart(self, obj):
         return ShoppingCart.objects.filter(
             recipe=obj, cart_owner=self.context['request'].user).exists()
-    
+
     def get_ingredients(self, obj):
         queryset = IngredientInRecipe.objects.filter(recipe=obj)
         return IngredientInRecipeSerializer(queryset, many=True).data
