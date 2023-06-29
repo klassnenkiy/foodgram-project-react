@@ -1,21 +1,22 @@
-from django.db.models import Sum
-from django.shortcuts import HttpResponse, get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
-                            ShoppingCart, Tag)
-from rest_framework import status, viewsets
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from users.models import Subscribe, User
-
-from .filters import IngredientSearchFilter, RecipeFilter
-from .mixins import CreateDestroyViewSet, DeleteActionMixin
-from .paginators import PageLimitPagination
-from .permissions import IsAuthorOrReadOnly
-from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
-                          RecipeSerializer, ShoppingCartSerializer,
+from django.db.models import Sum 
+from django.shortcuts import HttpResponse, get_object_or_404 
+from django_filters.rest_framework import DjangoFilterBackend 
+from rest_framework import status, viewsets 
+from rest_framework.decorators import action 
+from rest_framework.permissions import IsAuthenticated 
+from rest_framework.response import Response 
+from rest_framework.views import APIView 
+ 
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe, 
+                            ShoppingCart, Tag) 
+from users.models import Subscribe, User 
+ 
+from .filters import IngredientSearchFilter, RecipeFilter 
+from .mixins import CreateDestroyViewSet, DeleteActionMixin 
+from .paginators import PageLimitPagination 
+from .permissions import IsAuthorOrReadOnly 
+from .serializers import (FavoriteRecipeSerializer, IngredientSerializer, 
+                          RecipeSerializer, ShoppingCartSerializer, 
                           SubscribeSerializer, TagSerializer)
 
 
@@ -60,7 +61,7 @@ class SubscribeAPIView(APIView):
         )
         if request.user == author:
             return Response(
-                {'errors': 'Вы не можете подписаться на самого себя'},
+                {'errors': 'Нельзя подписаться на самого себя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         subscription = Subscribe.objects.filter(
@@ -97,7 +98,7 @@ class SubscribeAPIView(APIView):
         )
         if not subscription.exists():
             return Response(
-                {'errors': 'Вы еще не подписаны на этого автора'},
+                {'errors': 'Вы не подписаны на этого автора'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         subscription.delete()
@@ -124,7 +125,17 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        return self.delete_action(request, recipe_id)
+        recipe = self.kwargs.get('recipe_id')
+        recipe_lover = self.request.user
+        if not Favorite.objects.filter(recipe=recipe,
+                                       recipe_lover=recipe_lover).exists():
+            return Response({'errors': 'Рецепт удален из избранного'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        get_object_or_404(
+            Favorite,
+            recipe_lover=recipe_lover,
+            recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ShoppingCartViewSet(CreateDestroyViewSet, DeleteActionMixin):
@@ -141,7 +152,17 @@ class ShoppingCartViewSet(CreateDestroyViewSet, DeleteActionMixin):
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        return self.delete_action(request, recipe_id)
+        recipe = self.kwargs.get('recipe_id')
+        cart_owner = self.request.user
+        if not ShoppingCart.objects.filter(recipe=recipe,
+                                           cart_owner=cart_owner).exists():
+            return Response({'errors': 'Рецепт не добавлен в список покупок'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        get_object_or_404(
+            ShoppingCart,
+            cart_owner=cart_owner,
+            recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class DownloadShoppingCart(APIView):
@@ -149,7 +170,7 @@ class DownloadShoppingCart(APIView):
 
     def get(self, request):
         if not ShoppingCart.objects.filter(cart_owner=request.user).exists():
-            return Response({'errors': 'В вашем списке покупок ничего нет'},
+            return Response({'errors': 'в списке покупок ничего нет'},
                             status=status.HTTP_400_BAD_REQUEST)
         rec_pk = ShoppingCart.objects.filter(
             cart_owner=request.user).values('recipe_id')
@@ -165,6 +186,6 @@ class DownloadShoppingCart(APIView):
                      f'{item["ingredient__measurement_unit"]}\n')
 
         response = HttpResponse(text, content_type='text/plain')
-        filename = 'shopping_list.txt'
+        filename = 'recipes_list.txt'
         response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
