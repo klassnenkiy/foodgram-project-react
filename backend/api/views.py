@@ -149,12 +149,11 @@ class DownloadShoppingCart(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        user = request.user
-        if not ShoppingCart.objects.filter(cart_owner=user).exists():
+        if not ShoppingCart.objects.filter(cart_owner=request.user).exists():
             return Response({'errors': 'В вашем списке покупок ничего нет'},
                             status=status.HTTP_400_BAD_REQUEST)
         ingredients = IngredientInRecipe.objects.filter(
-            recipe__shopping_cart__cart_owner=user).values(
+            recipe__shopping_cart__cart_owner=request.user).values(
                 'ingredient__name', 'ingredient__measurement_unit').annotate(
                     total_amount=Sum('amount')).order_by()
 
