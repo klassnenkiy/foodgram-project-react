@@ -152,15 +152,17 @@ class DownloadShoppingCart(APIView):
         if not ShoppingCart.objects.filter(cart_owner=request.user).exists():
             return Response({'errors': 'В вашем списке покупок ничего нет'},
                             status=status.HTTP_400_BAD_REQUEST)
+        rec_pk = ShoppingCart.objects.filter(
+            cart_owner=request.user).values('recipe_id')
         ingredients = IngredientInRecipe.objects.filter(
-            recipe__shopping_cart__cart_owner=request.user).values(
+            recipe_id__in=rec_pk).values(
                 'ingredient__name', 'ingredient__measurement_unit').annotate(
-                    total_amount=Sum('amount')).order_by()
+                    amount=Sum('amount')).order_by()
 
         text = 'Список покупок:\n\n'
         for item in ingredients:
             text += (f'{item["ingredient__name"]}: '
-                     f'{item["total_amount"]} '
+                     f'{item["amount"]} '
                      f'{item["ingredient__measurement_unit"]}\n')
 
         response = HttpResponse(text, content_type='text/plain')
