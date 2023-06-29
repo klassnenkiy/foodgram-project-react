@@ -12,6 +12,7 @@ services:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
       - ./.env
+    restart: always
   backend:
     image: tyulyagin/foodgram_backend:latest
     restart: always
