@@ -1,11 +1,12 @@
 from django.shortcuts import get_object_or_404
+from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.validators import ValidationError
 
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe, User
-from .fields import Base64ImageField
+from .validators import (validate_cooking_time, validate_ingredients,
+                         validate_tags)
 
 
 class RecipeToRepresentationSerializer(serializers.ModelSerializer):
@@ -182,43 +183,26 @@ class RecipeSerializer(serializers.ModelSerializer):
         queryset = IngredientInRecipe.objects.filter(recipe=obj)
         return IngredientInRecipeSerializer(queryset, many=True).data
 
-    def validate_tags(self, data):
+    def validate(self, data):
         tags = data.get('tags')
+        ingredients = data.get('ingredients')
+        cooking_time = data.get('cooking_time')
+
         if not tags:
             raise serializers.ValidationError({
-                'tags': 'не указаны теги'})
-
-        for tag in tags:
-            if not Tag.objects.filter(pk=tag).exists():
-                raise ValidationError(f'{tag} - тега не существует')
-
-    def validate_ingredients(self, data):
-        ingredients = data.get('ingredients')
-        if len(ingredients) < 1:
-            raise ValidationError(
-                'Блюдо должно содержать хотя бы 1 ингредиент')
-        unique_list = []
-        for ingredient in ingredients:
-            if not ingredient.get('id'):
-                raise ValidationError('Укажите id ингредиента')
-            ingredient_id = ingredient.get('id')
-            if not Ingredient.objects.filter(pk=ingredient_id).exists():
-                raise ValidationError(
-                    f'{ingredient_id}- ингредиент с таким id не найден')
-            if ingredient_id in unique_list:
-                raise ValidationError(
-                    f'{ingredient_id}- дублирующийся ингредиент')
-            unique_list.append(ingredient_id)
-            ingredient_amount = ingredient.get('amount')
-            if ingredient_amount < 1:
-                raise ValidationError(
-                    f'Количество {ingredient} должно быть больше 1')
-
-    def validate_cooking_time(self, data):
-        cooking_time = data.get('cooking_time')
-        if not cooking_time or int(cooking_time) <= 0:
+                'tags': 'Кажется вы забыли указать тэги'})
+        if not ingredients:
             raise serializers.ValidationError({
-                'cooking_time': 'Укажите время приготовления'})
+                'ingredients': 'Кажется вы забыли указать ингредиенты'})
+        validate_tags(tags, Tag)
+        validate_ingredients(ingredients, Ingredient)
+        validate_cooking_time(cooking_time)
+        data.update({
+            'tags': tags,
+            'ingredients': ingredients,
+            'author': self.context.get('request').user
+        })
+        return data
 
     def create(self, validated_data):
         tags = self.validated_data.pop('tags')
@@ -243,7 +227,14 @@ class RecipeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         new_tags = self.validated_data.pop('tags')
         new_ingredients = self.validated_data.pop('ingredients')
-        super().update(instance, validated_data)
+
+        instance.image = validated_data.get('image', instance.image)
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time)
+        instance.save()
+
         IngredientInRecipe.objects.filter(recipe=instance).delete()
         bulk_create_data = (
             IngredientInRecipe(
@@ -253,8 +244,10 @@ class RecipeSerializer(serializers.ModelSerializer):
                 amount=ingredient.get('amount'))
             for ingredient in new_ingredients)
         IngredientInRecipe.objects.bulk_create(bulk_create_data)
+
         instance.tags.clear()
         instance.tags.set(new_tags)
+
         return instance
 
 
