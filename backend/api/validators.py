@@ -26,7 +26,7 @@ def validate_ingredients(ingredients_list, val_model):
 def validate_tags(tags_list, val_model):
     for tag in tags_list:
         if not val_model.objects.filter(pk=tag).exists():
-            raise ValidationError(f'{tag} - Такого тэга не существует')
+            raise ValidationError(f'{tag} - такого тега нет')
 
 
 def validate_cooking_time(value):

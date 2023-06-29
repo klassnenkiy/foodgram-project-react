@@ -184,8 +184,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         return IngredientInRecipeSerializer(queryset, many=True).data
 
     def validate(self, data):
-        tags = data.get('tags')
-        ingredients = data.get('ingredients')
+        tags = self.data.get('tags')
+        ingredients = self.data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
         if not tags:
