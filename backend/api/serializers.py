@@ -185,11 +185,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags = data.get('tags')
         if not tags:
             raise serializers.ValidationError({
-                'tags': 'Кажется вы забыли указать тэги'})
+                'tags': 'не указаны теги'})
 
         for tag in tags:
             if not Tag.objects.filter(pk=tag).exists():
-                raise ValidationError(f'{tag} - Такого тэга не существует')
+                raise ValidationError(f'{tag} - тега не существует')
 
     def validate_ingredients(self, data):
         ingredients = data.get('ingredients')
