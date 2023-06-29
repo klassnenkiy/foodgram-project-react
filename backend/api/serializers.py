@@ -162,8 +162,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author',
             'ingredients', 'is_favorited',
             'is_in_shopping_cart', 'name',
-            'image', 'text', 'cooking_time',
-        )
+            'image', 'text', 'cooking_time')
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
@@ -184,8 +183,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         return IngredientInRecipeSerializer(queryset, many=True).data
 
     def validate(self, data):
-        tags = self.data.get('tags')
-        ingredients = self.data.get('ingredients')
+        tags = self.initial_data.get('tags')
+        ingredients = self.initial_data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
         if not tags:
