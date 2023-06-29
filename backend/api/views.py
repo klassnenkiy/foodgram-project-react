@@ -1,22 +1,22 @@
-from django.db.models import Sum 
-from django.shortcuts import HttpResponse, get_object_or_404 
-from django_filters.rest_framework import DjangoFilterBackend 
-from rest_framework import status, viewsets 
-from rest_framework.decorators import action 
-from rest_framework.permissions import IsAuthenticated 
-from rest_framework.response import Response 
-from rest_framework.views import APIView 
- 
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe, 
-                            ShoppingCart, Tag) 
-from users.models import Subscribe, User 
- 
-from .filters import IngredientSearchFilter, RecipeFilter 
-from .mixins import CreateDestroyViewSet, DeleteActionMixin 
-from .paginators import PageLimitPagination 
-from .permissions import IsAuthorOrReadOnly 
-from .serializers import (FavoriteRecipeSerializer, IngredientSerializer, 
-                          RecipeSerializer, ShoppingCartSerializer, 
+from django.db.models import Sum
+from django.shortcuts import HttpResponse, get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
+                            ShoppingCart, Tag)
+from users.models import Subscribe, User
+
+from .filters import IngredientSearchFilter, RecipeFilter
+from .mixins import CreateDestroyViewSet, DeleteActionMixin
+from .paginators import PageLimitPagination
+from .permissions import IsAuthorOrReadOnly
+from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
+                          RecipeSerializer, ShoppingCartSerializer,
                           SubscribeSerializer, TagSerializer)
 
 
