@@ -47,19 +47,19 @@ class User(AbstractUser):
 class Subscribe(models.Model):
     user = models.ForeignKey(
         User,
-        related_name='subscriber',
+        related_name='follower',
         verbose_name='Подписчик',
         on_delete=models.CASCADE,
     )
     author = models.ForeignKey(
         User,
-        related_name='subscribing',
+        related_name='author',
         verbose_name='Автор',
         on_delete=models.CASCADE,
     )
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('-author_id',)
         constraints = [
             UniqueConstraint(
                 fields=['user', 'author'],
@@ -70,4 +70,4 @@ class Subscribe(models.Model):
         verbose_name_plural = 'Подписки'
 
     def __str__(self):
-        return f'{self.user} подписан на {self.author}'
+        return f'{self.user.username} подписан на {self.author.username}'
