@@ -77,10 +77,7 @@ python manage.py runserver
 ```bash
 docker compose up -d --build
 ```  
-  > После сборки появляются 3 контейнера:
-  > 1. контейнер базы данных **db**
-  > 2. контейнер приложения **backend**
-  > 3. контейнер web-сервера **nginx**
+
 * Примените миграции:
 ```bash
 docker compose exec backend python manage.py migrate
@@ -91,7 +88,7 @@ docker compose exec backend python manage.py createsuperuser
 ```
 * Соберите статику:
 ```bash
-docker compose exec backend python manage.py collectstatic --noinput
+docker compose exec backend python manage.py collectstatic
 ```
 * Автор:
 Станислав Тюлягин 
