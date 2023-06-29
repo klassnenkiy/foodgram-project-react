@@ -92,5 +92,5 @@ docker compose exec backend python manage.py collectstatic
 * Автор:
 Станислав Тюлягин 
 
-* Ревьюер:
+* Ревьюер: 
 Михаил Иванов 
