@@ -11,7 +11,7 @@ from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe, User
 from .filters import IngredientSearchFilter, RecipeFilter
-from .mixins import CreateDestroyViewSet, DeleteActionMixin
+from .mixins import CreateDestroyViewSet
 from .paginators import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
@@ -107,9 +107,15 @@ class SubscribeAPIView(APIView):
 class AddRemoveMixin:
     def add_to_list(self, model_class, item_id, owner, error_message):
         item = get_object_or_404(model_class, pk=item_id)
-        obj, created = model_class.objects.get_or_create(owner=owner, item=item)
+        obj, created = model_class.objects.get_or_create(
+            owner=owner,
+            item=item
+        )
         if not created:
-            return Response({'errors': error_message}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'errors': error_message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(status=status.HTTP_201_CREATED)
 
     def remove_from_list(self, model_class, item_id, owner):
@@ -150,7 +156,11 @@ class ShoppingCartViewSet(AddRemoveMixin, CreateDestroyViewSet):
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        return self.remove_from_list(ShoppingCart, recipe_id, self.request.user)
+        return self.remove_from_list(
+            ShoppingCart,
+            recipe_id,
+            self.request.user
+        )
 
 
 class DownloadShoppingCart(APIView):
