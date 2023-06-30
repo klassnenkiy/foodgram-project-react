@@ -207,8 +207,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         tags = self.validated_data.pop('tags')
         ingredients = self.validated_data.pop('ingredients')
+        keys_to_pop = ['name', 'image', 'text', 'cooking_time', 'author']
         new_recipe = Recipe.objects.create(
-            **validated_data, author=self.context.get('request').user)
+            **{key: self.validated_data.pop(key) for key in keys_to_pop}
+        )
         new_recipe.tags.add(*tags)
         self.create_ingredients(ingredients, new_recipe)
         return new_recipe
