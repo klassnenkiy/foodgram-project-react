@@ -154,6 +154,14 @@ class FavoriteViewSet(AddRemoveFromListMixin, viewsets.ModelViewSet):
         serializer.save(
             recipe_lover=self.request.user, recipe=recipe)
 
+    @action(methods=('delete',), detail=True)
+    def delete(self, request, recipe_id):
+        item = self.kwargs.get('recipe_id')
+        owner = self.request.user
+        queryset = self.queryset
+        error_message = 'Рецепт удален из избранного'
+        return self.perform_action(queryset, item, owner, error_message)
+
 
 class DownloadShoppingCart(APIView):
     permission_classes = (IsAuthenticated,)
