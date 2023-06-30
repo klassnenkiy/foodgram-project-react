@@ -107,9 +107,15 @@ class SubscribeAPIView(APIView):
 class AddRemoveMixin:
     def add_to_list(self, model_class, item_id, owner, error_message):
         item = get_object_or_404(model_class, pk=item_id)
-        obj, created = model_class.objects.get_or_create(owner=owner, item=item)
+        obj, created = model_class.objects.get_or_create(
+            owner=owner,
+            item=item
+        )
         if not created:
-            return Response({'errors': error_message}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'errors': error_message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(status=status.HTTP_201_CREATED)
 
     def remove_from_list(self, model_class, item_id, owner, error_message):
@@ -118,7 +124,10 @@ class AddRemoveMixin:
             item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except model_class.DoesNotExist:
-            return Response({'errors': error_message}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'errors': error_message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class FavoriteViewSet(AddRemoveMixin, viewsets.ModelViewSet):
@@ -152,7 +161,10 @@ class ShoppingCartViewSet(AddRemoveMixin, CreateDestroyViewSet):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        recipe = get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
+        recipe = get_object_or_404(
+            Recipe,
+            pk=self.kwargs.get('recipe_id')
+        )
         context.update({'recipe': recipe})
         context.update({'owner': self.request.user})
         return context
