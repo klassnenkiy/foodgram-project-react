@@ -178,6 +178,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         return ShoppingCart.objects.filter(
             recipe=obj, cart_owner=request.user).exists()
 
+    def get_ingredients(self, obj):
+        pass
+
     def validate(self, data):
         tags = self.initial_data.get('tags')
         ingredients = self.initial_data.get('ingredients')
