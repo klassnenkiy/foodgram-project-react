@@ -69,7 +69,6 @@ jobs:
           sudo docker-compose stop
           sudo docker-compose rm backend
           sudo docker-compose rm frontend
-          sudo docker system prune -a
           rm .env
           touch .env
           echo DEBUG=${{ secrets.DEBUG }} >> .env
