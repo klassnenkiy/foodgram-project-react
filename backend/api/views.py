@@ -10,7 +10,6 @@ from rest_framework.views import APIView
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe, User
-
 from .filters import IngredientSearchFilter, RecipeFilter
 from .mixins import CreateDestroyViewSet, DeleteActionMixin
 from .paginators import PageLimitPagination
@@ -177,12 +176,12 @@ class DownloadShoppingCart(APIView):
         ingredients = IngredientInRecipe.objects.filter(
             recipe_id__in=rec_pk).values(
                 'ingredient__name', 'ingredient__measurement_unit').annotate(
-                    amount=Sum('amount')).order_by()
+                    total_amount=Sum('amount')).order_by()
 
         text = 'Список покупок:\n\n'
         for item in ingredients:
             text += (f'{item["ingredient__name"]}: '
-                     f'{item["amount"]} '
+                     f'{item["total_amount"]} '
                      f'{item["ingredient__measurement_unit"]}\n')
 
         response = HttpResponse(text, content_type='text/plain')
