@@ -106,8 +106,8 @@ class SubscribeAPIView(APIView):
 
 class AddRemoveFromListMixin:
     def perform_action(
-            self, queryset, item_field, owner_field, item, owner, error_message
-        ):
+        self, queryset, item_field, owner_field, item, owner, error_message
+    ):
         if not queryset.filter(
             **{item_field: item, owner_field: owner}
         ).exists():
