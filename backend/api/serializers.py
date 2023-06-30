@@ -207,6 +207,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         new_recipe = Recipe.objects.create(
             **{key: self.validated_data.pop(key) for key in keys_to_pop}
         )
+        new_recipe.save()
         if tags:
             new_recipe.tags.set([*tags])
         self.create_ingredients(ingredients, new_recipe)
