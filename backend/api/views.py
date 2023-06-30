@@ -105,28 +105,42 @@ class SubscribeAPIView(APIView):
 
 
 class AddRemoveFromListMixin:
-    def perform_action(self, item, owner, error_message):
-        queryset = self.get_queryset()
-        if not queryset.filter(recipe=item, cart_owner=owner).exists():
+    def perform_action(
+            self, queryset, item_field, owner_field, item, owner, error_message
+        ):
+        if not queryset.filter(
+            **{item_field: item, owner_field: owner}
+        ).exists():
             return Response(
                 {'errors': error_message},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        queryset.get(recipe=item, cart_owner=owner).delete()
+        queryset.get(**{item_field: item, owner_field: owner}).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
         item = self.kwargs.get('recipe_id')
         owner = self.request.user
+        queryset = self.get_queryset()
+        item_field = self.item_field
+        owner_field = self.owner_field
         error_message = self.error_message
-        return self.perform_action(item, owner, error_message)
+        return self.perform_action(
+            queryset,
+            item_field,
+            owner_field,
+            item, owner,
+            error_message
+        )
 
 
 class ShoppingCartViewSet(AddRemoveFromListMixin, CreateDestroyViewSet):
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer
     error_message = 'Рецепт не добавлен в список покупок'
+    item_field = 'recipe'
+    owner_field = 'cart_owner'
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -140,6 +154,8 @@ class FavoriteViewSet(AddRemoveFromListMixin, viewsets.ModelViewSet):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteRecipeSerializer
     permission_classes = (IsAuthenticated,)
+    item_field = 'recipe'
+    owner_field = 'recipe_lover'
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
