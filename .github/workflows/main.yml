@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.9]
+        python-version: [3.9]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -69,6 +69,7 @@ jobs:
           sudo docker-compose stop
           sudo docker-compose rm backend
           sudo docker-compose rm frontend
+          sudo docker system prune -a
           rm .env
           touch .env
           echo DEBUG=${{ secrets.DEBUG }} >> .env
