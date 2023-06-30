@@ -1,5 +1,6 @@
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
+from rest_framework.serializers import ListField, SlugRelatedField
 
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
@@ -154,7 +155,6 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
 
-
     class Meta:
         model = Recipe
         fields = (
@@ -175,6 +175,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             return False
         return ShoppingCart.objects.filter(
             recipe=obj, cart_owner=request.user).exists()
+
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
     tags = ListField(
