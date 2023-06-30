@@ -182,7 +182,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients = data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
-        if not tags.exists():
+        if not tags:
             raise serializers.ValidationError({
                 'tags': 'Кажется вы забыли указать тэги'})
         if not ingredients:
