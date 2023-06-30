@@ -15,7 +15,7 @@ from .mixins import CreateDestroyViewSet
 from .paginators import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
-                          RecipeSerializer, ShoppingCartSerializer,
+                          RecipeReadSerializer, ShoppingCartSerializer,
                           SubscribeSerializer, TagSerializer)
 
 
@@ -24,7 +24,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = PageLimitPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeReadSerializer
     permission_classes = (IsAuthorOrReadOnly,)
 
 
@@ -105,7 +105,6 @@ class SubscribeAPIView(APIView):
 
 
 class AddRemoveFromListMixin:
-    """Удаление избранного не работает, остальное работает"""
     def perform_action(
         self, queryset, item_field, owner_field, item, owner, error_message
     ):
