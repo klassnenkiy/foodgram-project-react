@@ -151,7 +151,7 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     tags = TagSerializer(read_only=True, many=True)
-    ingredients = serializers.SerializerMethodField(read_only=True, many=True)
+    ingredients = serializers.SerializerMethodField(read_only=True)
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     image = Base64ImageField(use_url=True, max_length=None)
@@ -179,6 +179,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             recipe=obj, cart_owner=request.user).exists()
 
     def get_ingredients(self, obj):
+        """не грузит страницу он требует этот метод, без него ошибка 500"""
         pass
 
     def validate(self, data):
