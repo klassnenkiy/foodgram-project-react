@@ -1,4 +1,3 @@
-from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
@@ -152,10 +151,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     tags = TagSerializer(read_only=True, many=True)
     ingredients = IngredientInRecipeSerializer(
-        IngredientInRecipe.objects.filter(recipe=obj),
+        source='ingredientinrecipe_set',
         many=True,
-        read_only=True,
-    ).data
+        read_only=True
+    )
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     image = Base64ImageField(use_url=True, max_length=None)
@@ -203,7 +202,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'author': self.context.get('request').user
         })
         return data
-    
+
     def create(self, validated_data):
         tags = self.validated_data.pop('tags')
         ingredients = self.validated_data.pop('ingredients')
@@ -224,7 +223,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         instance.tags.clear()
         instance.tags.set(new_tags)
         return instance
-
 
     def create_ingredients(self, ingredients, recipe):
         bulk_create_data = [
