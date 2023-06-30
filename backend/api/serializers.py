@@ -150,11 +150,7 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     tags = TagSerializer(read_only=True, many=True)
-    ingredients = IngredientInRecipeSerializer(
-        source='ingredientinrecipe_set',
-        many=True,
-        read_only=True
-    )
+    ingredients = IngredientInRecipeSerializer(many=True)
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     image = Base64ImageField(use_url=True, max_length=None)
@@ -182,9 +178,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             recipe=obj, cart_owner=request.user).exists()
 
     def validate(self, data):
-        """когда ставлю дата не создается рецепт"""
-        tags = self.data.get('tags')
-        ingredients = data.get('ingredientinrecipe_set')
+        tags = data.get('tags')
+        ingredients = data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
         if not tags:
@@ -205,7 +200,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredientinrecipe_set')
+        ingredients = validated_data.pop('ingredients')
         keys_to_pop = ['name', 'image', 'text', 'cooking_time', 'author']
         new_recipe = Recipe.objects.create(
             **{key: self.validated_data.pop(key) for key in keys_to_pop}
@@ -216,18 +211,12 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredientinrecipe_set')
-        instance.image = validated_data.get('image', instance.image)
-        instance.name = validated_data.get('name', instance.name)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time)
-        instance.save()
+        ingredients = validated_data.pop('ingredients')
         IngredientInRecipe.objects.filter(recipe=instance).delete()
         self.create_ingredients(ingredients, instance)
         instance.tags.clear()
         instance.tags.set(tags)
-        return instance
+        return super().update(instance, validated_data)
 
     def create_ingredients(self, ingredients, recipe):
         bulk_create_data = [
