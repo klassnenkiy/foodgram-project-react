@@ -125,7 +125,17 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        return self.delete_action(request, recipe_id)
+        recipe = self.kwargs.get('recipe_id')
+        recipe_lover = self.request.user
+        if not Favorite.objects.filter(recipe=recipe,
+                                       recipe_lover=recipe_lover).exists():
+            return Response({'errors': 'Рецепт удален из избранного'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        get_object_or_404(
+            Favorite,
+            recipe_lover=recipe_lover,
+            recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ShoppingCartViewSet(CreateDestroyViewSet, DeleteActionMixin):
@@ -142,29 +152,40 @@ class ShoppingCartViewSet(CreateDestroyViewSet, DeleteActionMixin):
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        return self.delete_action(request, recipe_id)
+        recipe = self.kwargs.get('recipe_id')
+        cart_owner = self.request.user
+        if not ShoppingCart.objects.filter(recipe=recipe,
+                                           cart_owner=cart_owner).exists():
+            return Response({'errors': 'Рецепт не добавлен в список покупок'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        get_object_or_404(
+            ShoppingCart,
+            cart_owner=cart_owner,
+            recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class DownloadShoppingCart(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        user = request.user
-        if not ShoppingCart.objects.filter(cart_owner=user).exists():
-            return Response({'errors': 'В вашем списке покупок ничего нет'},
+        if not ShoppingCart.objects.filter(cart_owner=request.user).exists():
+            return Response({'errors': 'в списке покупок ничего нет'},
                             status=status.HTTP_400_BAD_REQUEST)
+        rec_pk = ShoppingCart.objects.filter(
+            cart_owner=request.user).values('recipe_id')
         ingredients = IngredientInRecipe.objects.filter(
-            recipe__shopping_cart__cart_owner=user).values(
+            recipe_id__in=rec_pk).values(
                 'ingredient__name', 'ingredient__measurement_unit').annotate(
-                    total_amount=Sum('amount')).order_by()
+                    amount=Sum('amount')).order_by()
 
         text = 'Список покупок:\n\n'
         for item in ingredients:
             text += (f'{item["ingredient__name"]}: '
-                     f'{item["total_amount"]} '
+                     f'{item["amount"]} '
                      f'{item["ingredient__measurement_unit"]}\n')
 
         response = HttpResponse(text, content_type='text/plain')
-        filename = 'shopping_list.txt'
+        filename = 'recipes_list.txt'
         response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
