@@ -149,7 +149,7 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
-    tags = TagSerializer(read_only=True, many=True)
+    tags = TagSerializer(many=True)
     ingredients = IngredientInRecipeSerializer(many=True)
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
@@ -182,7 +182,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients = data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
-        if not tags:
+        if not tags.exists():
             raise serializers.ValidationError({
                 'tags': 'Кажется вы забыли указать тэги'})
         if not ingredients:
