@@ -104,7 +104,20 @@ class SubscribeAPIView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class FavoriteViewSet(viewsets.ModelViewSet):
+class AddRemoveMixin:
+    def add_to_list(self, model_class, item_id, owner, error_message):
+        item = get_object_or_404(model_class, pk=item_id)
+        obj, created = model_class.objects.get_or_create(owner=owner, item=item)
+        if not created:
+            return Response({'errors': error_message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_201_CREATED)
+
+    def remove_from_list(self, model_class, item_id, owner):
+        model_class.objects.filter(owner=owner, item_id=item_id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FavoriteViewSet(AddRemoveMixin, viewsets.ModelViewSet):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteRecipeSerializer
     permission_classes = (IsAuthenticated,)
@@ -115,29 +128,15 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         return context
 
     def perform_create(self, serializer):
-        recipe = get_object_or_404(
-            Recipe,
-            pk=self.kwargs.get('recipe_id'),
-        )
-        serializer.save(
-            recipe_lover=self.request.user, recipe=recipe)
+        recipe = get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
+        serializer.save(recipe_lover=self.request.user, recipe=recipe)
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        recipe = self.kwargs.get('recipe_id')
-        recipe_lover = self.request.user
-        if not Favorite.objects.filter(recipe=recipe,
-                                       recipe_lover=recipe_lover).exists():
-            return Response({'errors': 'Рецепт удален из избранного'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        get_object_or_404(
-            Favorite,
-            recipe_lover=recipe_lover,
-            recipe=recipe).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return self.remove_from_list(Favorite, recipe_id, self.request.user)
 
 
-class ShoppingCartViewSet(CreateDestroyViewSet, DeleteActionMixin):
+class ShoppingCartViewSet(AddRemoveMixin, CreateDestroyViewSet):
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer
     error_message = 'Рецепт не добавлен в список покупок'
@@ -151,17 +150,7 @@ class ShoppingCartViewSet(CreateDestroyViewSet, DeleteActionMixin):
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        recipe = self.kwargs.get('recipe_id')
-        cart_owner = self.request.user
-        if not ShoppingCart.objects.filter(recipe=recipe,
-                                           cart_owner=cart_owner).exists():
-            return Response({'errors': 'Рецепт не добавлен в список покупок'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        get_object_or_404(
-            ShoppingCart,
-            cart_owner=cart_owner,
-            recipe=recipe).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return self.remove_from_list(ShoppingCart, recipe_id, self.request.user)
 
 
 class DownloadShoppingCart(APIView):
