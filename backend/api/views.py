@@ -105,7 +105,7 @@ class SubscribeAPIView(APIView):
 
 
 class AddRemoveFromListMixin:
-    """Удаление избранного не работает пробовал по разному, все остальное работает"""
+    """Удаление избранного не работает, остальное работает"""
     def perform_action(
         self, queryset, item_field, owner_field, item, owner, error_message
     ):
