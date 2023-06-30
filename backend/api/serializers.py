@@ -199,23 +199,24 @@ class RecipeSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        tags = validated_data.pop('tags')
+        tags = validated_data.pop('tags', None)
         ingredients = validated_data.pop('ingredients')
         keys_to_pop = ['name', 'image', 'text', 'cooking_time', 'author']
         new_recipe = Recipe.objects.create(
             **{key: self.validated_data.pop(key) for key in keys_to_pop}
         )
-        new_recipe.tags.add(*tags)
+        if tags:
+            new_recipe.tags.set([*tags])
         self.create_ingredients(ingredients, new_recipe)
         return new_recipe
 
     def update(self, instance, validated_data):
-        tags = validated_data.pop('tags')
+        tags = validated_data.pop('tags', None)
         ingredients = validated_data.pop('ingredients')
         IngredientInRecipe.objects.filter(recipe=instance).delete()
         self.create_ingredients(ingredients, instance)
-        instance.tags.clear()
-        instance.tags.set(tags)
+        if tags:
+            instance.tags.set([*tags])
         return super().update(instance, validated_data)
 
     def create_ingredients(self, ingredients, recipe):
