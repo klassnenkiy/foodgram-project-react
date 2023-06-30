@@ -104,57 +104,26 @@ class SubscribeAPIView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class AddRemoveMixin:
-    def add_to_list(self, model_class, item_id, owner, error_message):
-        item = get_object_or_404(model_class, pk=item_id)
-        obj, created = model_class.objects.get_or_create(
-            owner=owner,
-            item=item
-        )
-        if not created:
+class AddRemoveFromListMixin:
+    def perform_action(self, queryset, item, owner, error_message):
+        if not queryset.filter(recipe=item, cart_owner=owner).exists():
             return Response(
                 {'errors': error_message},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        return Response(status=status.HTTP_201_CREATED)
-
-    def remove_from_list(self, model_class, item_id, owner, error_message):
-        try:
-            item = model_class.objects.get(item__pk=item_id, owner=owner)
-            item.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except model_class.DoesNotExist:
-            return Response(
-                {'errors': error_message},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class FavoriteViewSet(AddRemoveMixin, viewsets.ModelViewSet):
-    queryset = Favorite.objects.all()
-    serializer_class = FavoriteRecipeSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({'recipe': self.kwargs.get('recipe_id')})
-        return context
-
-    def perform_create(self, serializer):
-        recipe = get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
-        serializer.save(recipe_lover=self.request.user, recipe=recipe)
+        queryset.get(recipe=item, cart_owner=owner).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        return self.remove_from_list(
-            Favorite,
-            recipe_id,
-            self.request.user,
-            'Рецепт удален из избранного'
-        )
+        item = self.kwargs.get('recipe_id')
+        owner = self.request.user
+        queryset = self.queryset
+        error_message = self.error_message
+        return self.perform_action(queryset, item, owner, error_message)
 
 
-class ShoppingCartViewSet(AddRemoveMixin, CreateDestroyViewSet):
+class ShoppingCartViewSet(AddRemoveFromListMixin, CreateDestroyViewSet):
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer
     error_message = 'Рецепт не добавлен в список покупок'
@@ -166,11 +135,24 @@ class ShoppingCartViewSet(AddRemoveMixin, CreateDestroyViewSet):
         context.update({'owner': self.request.user})
         return context
 
-    @action(methods=('delete',), detail=True)
-    def delete(self, request, recipe_id):
-        return self.remove_from_list(
-            ShoppingCart, recipe_id, self.request.user, 'Рецепт не добавлен в список покупок'
+
+class FavoriteViewSet(AddRemoveFromListMixin, viewsets.ModelViewSet):
+    queryset = Favorite.objects.all()
+    serializer_class = FavoriteRecipeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'recipe': self.kwargs.get('recipe_id')})
+        return context
+
+    def perform_create(self, serializer):
+        recipe = get_object_or_404(
+            Recipe,
+            pk=self.kwargs.get('recipe_id'),
         )
+        serializer.save(
+            recipe_lover=self.request.user, recipe=recipe)
 
 
 class DownloadShoppingCart(APIView):
