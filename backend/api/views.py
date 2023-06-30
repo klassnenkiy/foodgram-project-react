@@ -105,7 +105,8 @@ class SubscribeAPIView(APIView):
 
 
 class AddRemoveFromListMixin:
-    def perform_action(self, queryset, item, owner, error_message):
+    def perform_action(self, item, owner, error_message):
+        queryset = self.get_queryset()
         if not queryset.filter(recipe=item, cart_owner=owner).exists():
             return Response(
                 {'errors': error_message},
@@ -118,9 +119,8 @@ class AddRemoveFromListMixin:
     def delete(self, request, recipe_id):
         item = self.kwargs.get('recipe_id')
         owner = self.request.user
-        queryset = self.queryset
         error_message = self.error_message
-        return self.perform_action(queryset, item, owner, error_message)
+        return self.perform_action(item, owner, error_message)
 
 
 class ShoppingCartViewSet(AddRemoveFromListMixin, CreateDestroyViewSet):
