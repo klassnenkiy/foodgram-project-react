@@ -184,7 +184,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """когда ставлю дата не создается рецепт"""
         tags = self.initial_data.get('tags')
-        ingredients = self.initial_data.get('ingredients')
+        ingredients = self.initial_data.get('ingredientinrecipe_set')
         cooking_time = data.get('cooking_time')
 
         if not tags:
@@ -205,7 +205,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         tags = self.validated_data.pop('tags')
-        ingredients = self.validated_data.pop('ingredients')
+        ingredients = self.validated_data.pop('ingredientinrecipe_set')
         keys_to_pop = ['name', 'image', 'text', 'cooking_time', 'author']
         new_recipe = Recipe.objects.create(
             **{key: self.validated_data.pop(key) for key in keys_to_pop}
@@ -216,7 +216,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         new_tags = validated_data.pop('tags')
-        new_ingredients = validated_data.pop('ingredients')
+        new_ingredients = validated_data.pop('ingredientinrecipe_set')
         instance = super().update(instance, **validated_data)
         IngredientInRecipe.objects.filter(recipe=instance).delete()
         self.create_ingredients(new_ingredients, instance)
