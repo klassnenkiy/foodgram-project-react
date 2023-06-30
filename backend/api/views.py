@@ -120,7 +120,7 @@ class AddRemoveMixin:
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def remove_from_list(
-    self, model_class, owner_field, item_field, owner, item
+        self, model_class, owner_field, item_field, owner, item
     ):
         instance = model_class(**{owner_field: owner, item_field: item})
         serializer = self.get_serializer(instance)
