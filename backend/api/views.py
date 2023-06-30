@@ -106,12 +106,20 @@ class SubscribeAPIView(APIView):
 
 class AddRemoveFromListMixin:
     def perform_action(self, queryset, item, owner, error_message):
-        if not queryset.filter(recipe=item, cart_owner=owner).exists():
+        if not queryset.filter(
+            recipe=item,
+            recipe_lover=owner,
+            cart_owner=owner
+        ).exists():
             return Response(
                 {'errors': error_message},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        queryset.get(recipe=item, cart_owner=owner).delete()
+        queryset.get(
+            recipe=item,
+            recipe_lover=owner,
+            cart_owner=owner
+        ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=('delete',), detail=True)
