@@ -104,34 +104,62 @@ class SubscribeAPIView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class AddRemoveFromListMixin:
-    def perform_action(self, queryset, item, owner, error_message):
-        if not queryset.filter(
-            recipe=item,
-            recipe_lover=owner,
-            cart_owner=owner
+class AddRemoveMixin:
+    def add_to_list(self, model_class, owner_field, item_field, owner, item):
+        if not model_class.objects.filter(
+            **{owner_field: owner, item_field: item}
         ).exists():
             return Response(
-                {'errors': error_message},
+                {'errors': 'Рецепт не добавлен'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        queryset.get(
-            recipe=item,
-            recipe_lover=owner,
-            cart_owner=owner
+        get_object_or_404(
+            model_class,
+            **{owner_field: owner, item_field: item}
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def remove_from_list(
+            self,
+            model_class,
+            owner_field,
+            item_field,
+            owner,
+            item
+        ):
+        instance = model_class(**{owner_field: owner, item_field: item})
+        serializer = self.get_serializer(instance)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(**{owner_field: owner, item_field: item})
+
+class FavoriteViewSet(AddRemoveMixin, viewsets.ModelViewSet):
+    queryset = Favorite.objects.all()
+    serializer_class = FavoriteRecipeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'recipe': self.kwargs.get('recipe_id')})
+        return context
+
+    def perform_create(self, serializer):
+        recipe = get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
+        serializer.save(recipe_lover=self.request.user, recipe=recipe)
+
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        item = self.kwargs.get('recipe_id')
-        owner = self.request.user
-        queryset = self.queryset
-        error_message = self.error_message
-        return self.perform_action(queryset, item, owner, error_message)
+        recipe = self.kwargs.get('recipe_id')
+        recipe_lover = self.request.user
+        return self.remove_from_list(
+            Favorite,
+            'recipe_lover',
+            'recipe',
+            recipe_lover,
+            recipe
+        )
 
 
-class ShoppingCartViewSet(AddRemoveFromListMixin, CreateDestroyViewSet):
+class ShoppingCartViewSet(AddRemoveMixin, CreateDestroyViewSet):
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer
     error_message = 'Рецепт не добавлен в список покупок'
@@ -143,32 +171,17 @@ class ShoppingCartViewSet(AddRemoveFromListMixin, CreateDestroyViewSet):
         context.update({'owner': self.request.user})
         return context
 
-
-class FavoriteViewSet(AddRemoveFromListMixin, viewsets.ModelViewSet):
-    queryset = Favorite.objects.all()
-    serializer_class = FavoriteRecipeSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({'recipe': self.kwargs.get('recipe_id')})
-        return context
-
-    def perform_create(self, serializer):
-        recipe = get_object_or_404(
-            Recipe,
-            pk=self.kwargs.get('recipe_id'),
-        )
-        serializer.save(
-            recipe_lover=self.request.user, recipe=recipe)
-
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        item = self.kwargs.get('recipe_id')
-        owner = self.request.user
-        queryset = self.queryset
-        error_message = 'Рецепт удален из избранного'
-        return self.perform_action(queryset, item, owner, error_message)
+        recipe = self.kwargs.get('recipe_id')
+        cart_owner = self.request.user
+        return self.remove_from_list(
+            ShoppingCart,
+            'cart_owner',
+            'recipe',
+            cart_owner,
+            recipe
+        )
 
 
 class DownloadShoppingCart(APIView):
