@@ -179,10 +179,12 @@ class RecipeSerializer(serializers.ModelSerializer):
             recipe=obj, cart_owner=request.user).exists()
 
     def get_ingredients(self, obj):
+        """при удалении не отображаются рецепты нигде"""
         queryset = IngredientInRecipe.objects.filter(recipe=obj)
         return IngredientInRecipeSerializer(queryset, many=True).data
 
     def validate(self, data):
+        """когда ставлю дата не создается рецепт"""
         tags = self.initial_data.get('tags')
         ingredients = self.initial_data.get('ingredients')
         cooking_time = data.get('cooking_time')
@@ -207,11 +209,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags = self.validated_data.pop('tags')
         ingredients = self.validated_data.pop('ingredients')
         new_recipe = Recipe.objects.create(
-            name=self.validated_data.pop('name'),
-            image=self.validated_data.pop('image'),
-            text=self.validated_data.pop('text'),
-            cooking_time=self.validated_data.pop('cooking_time'),
-            author=self.validated_data.pop('author'))
+            **validated_data,
+            author=self.context.get('request').user
+        )
         new_recipe.tags.add(*tags)
         bulk_create_data = (
             IngredientInRecipe(
