@@ -213,14 +213,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             author=self.context.get('request').user
         )
         new_recipe.tags.add(*tags)
-        bulk_create_data = (
-            IngredientInRecipe(
-                recipe=new_recipe,
-                ingredient=get_object_or_404(
-                    Ingredient, id=ingredient.get('id')),
-                amount=ingredient.get('amount'))
-            for ingredient in ingredients)
-        IngredientInRecipe.objects.bulk_create(bulk_create_data)
+        self.create_ingredients(ingredients, new_recipe)
         return new_recipe
 
     def update(self, instance, validated_data):
@@ -235,19 +228,23 @@ class RecipeSerializer(serializers.ModelSerializer):
         instance.save()
 
         IngredientInRecipe.objects.filter(recipe=instance).delete()
-        bulk_create_data = (
-            IngredientInRecipe(
-                recipe=instance,
-                ingredient=get_object_or_404(
-                    Ingredient, id=ingredient.get('id')),
-                amount=ingredient.get('amount'))
-            for ingredient in new_ingredients)
-        IngredientInRecipe.objects.bulk_create(bulk_create_data)
+        self.create_ingredients(new_ingredients, instance)
 
         instance.tags.clear()
         instance.tags.set(new_tags)
 
         return instance
+    
+    def create_ingredients(self, ingredients, recipe):
+        bulk_create_data = [
+            IngredientInRecipe(
+                recipe=recipe,
+                ingredient_id=ingredient.get('id'),
+                amount=ingredient.get('amount')
+            )
+            for ingredient in ingredients
+        ]
+        IngredientInRecipe.objects.bulk_create(bulk_create_data)
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
