@@ -109,22 +109,16 @@ class AddRemoveMixin:
         item = get_object_or_404(model_class, pk=item_id)
         obj, created = model_class.objects.get_or_create(owner=owner, item=item)
         if not created:
-            return Response(
-                {'errors': error_message},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'errors': error_message}, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_201_CREATED)
 
     def remove_from_list(self, model_class, item_id, owner, error_message):
         try:
-            item = model_class.objects.get(owner=owner, item__pk=item_id)
+            item = model_class.objects.get(item__pk=item_id, owner=owner)
             item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except model_class.DoesNotExist:
-            return Response(
-                {'errors': error_message},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'errors': error_message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FavoriteViewSet(AddRemoveMixin, viewsets.ModelViewSet):
@@ -143,10 +137,7 @@ class FavoriteViewSet(AddRemoveMixin, viewsets.ModelViewSet):
 
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
-        return self.remove_from_list(
-            Favorite, recipe_id, self.request.user,
-            'Рецепт удален из избранного'
-        )
+        return self.remove_from_list(Favorite, recipe_id, self.request.user, 'Рецепт удален из избранного')
 
 
 class ShoppingCartViewSet(AddRemoveMixin, CreateDestroyViewSet):
@@ -164,8 +155,7 @@ class ShoppingCartViewSet(AddRemoveMixin, CreateDestroyViewSet):
     @action(methods=('delete',), detail=True)
     def delete(self, request, recipe_id):
         return self.remove_from_list(
-            ShoppingCart, recipe_id, self.request.user,
-            'Рецепт не добавлен в список покупок'
+            ShoppingCart, recipe_id, self.request.user, 'Рецепт не добавлен в список покупок'
         )
 
 
