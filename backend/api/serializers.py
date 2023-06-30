@@ -1,6 +1,5 @@
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.serializers import ListField, SlugRelatedField
 
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
@@ -148,19 +147,23 @@ class RecipeToRepresentationSerializer(serializers.ModelSerializer):
         )
 
 
-class RecipeReadSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(read_only=True, many=True)
+class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(), many=True
+    )
     ingredients = IngredientInRecipeSerializer(many=True)
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
+    image = Base64ImageField(use_url=True, max_length=None)
 
     class Meta:
         model = Recipe
         fields = (
-            'id', 'name', 'tags', 'author', 'ingredients', 'is_favorited',
-            'is_in_shopping_cart', 'image', 'text', 'cooking_time',
-        )
+            'id', 'tags', 'author',
+            'ingredients', 'is_favorited',
+            'is_in_shopping_cart', 'name',
+            'image', 'text', 'cooking_time')
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
@@ -176,28 +179,9 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         return ShoppingCart.objects.filter(
             recipe=obj, cart_owner=request.user).exists()
 
-
-class RecipeWriteSerializer(serializers.ModelSerializer):
-    tags = ListField(
-        child=SlugRelatedField(
-            slug_field='id',
-            queryset=Tag.objects.all(),
-        ),
-    )
-    ingredients = IngredientInRecipeSerializer(many=True)
-    image = Base64ImageField(use_url=True, max_length=None)
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'id', 'tags', 'author',
-            'ingredients', 'is_favorited',
-            'is_in_shopping_cart', 'name',
-            'image', 'text', 'cooking_time')
-
     def validate(self, data):
-        tags = data.get('tags')
-        ingredients = data.get('ingredients')
+        tags = self.initial_data.get('tags')
+        ingredients = self.initial_data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
         if not tags:

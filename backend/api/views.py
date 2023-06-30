@@ -15,7 +15,7 @@ from .mixins import CreateDestroyViewSet
 from .paginators import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
-                          RecipeReadSerializer, ShoppingCartSerializer,
+                          RecipeSerializer, ShoppingCartSerializer,
                           SubscribeSerializer, TagSerializer)
 
 
@@ -24,7 +24,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = PageLimitPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    serializer_class = RecipeReadSerializer
+    serializer_class = RecipeSerializer
     permission_classes = (IsAuthorOrReadOnly,)
 
 
