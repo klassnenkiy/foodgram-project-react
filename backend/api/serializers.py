@@ -150,7 +150,7 @@ class RecipeToRepresentationSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(), many=True
+        queryset=Tag.objects.all(), slug_field='id', many=True
     )
     ingredients = IngredientInRecipeSerializer(many=True)
     is_favorited = serializers.SerializerMethodField(read_only=True)
@@ -180,9 +180,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             recipe=obj, cart_owner=request.user).exists()
 
     def validate(self, data):
-        """с дата не получилось"""
-        tags = data.get('tags')
-        ingredients = data.get('ingredients')
+        tags = self.initial_data.get('tags')
+        ingredients = self.initial_data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
         if not tags:
