@@ -7,13 +7,13 @@ def validate_ingredients(ingredients_list, val_model):
             'Блюдо должно содержать хотя бы 1 ингредиент')
     unique_list = []
     for ingredient in ingredients_list:
-        if not ingredient.get('id'):
+        if 'id' not in ingredient:
             raise ValidationError('Укажите id ингредиента')
-        ingredient_id = ingredient.get('id')
+        ingredient_id = ingredient['id']
         if not val_model.objects.filter(pk=ingredient_id).exists():
             raise ValidationError(
                 f'{ingredient_id}- ингредиент с таким id не найден')
-        if id in unique_list:
+        if ingredient_id in unique_list:
             raise ValidationError(
                 f'{ingredient_id}- дублирующийся ингредиент')
         unique_list.append(ingredient_id)
