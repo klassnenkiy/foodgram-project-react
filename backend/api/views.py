@@ -156,6 +156,7 @@ class FavoriteViewSet(AddRemoveFromListMixin, viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     item_field = 'recipe'
     owner_field = 'recipe_lover'
+    error_message = 'Рецепт не добавлен в избранное'
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
