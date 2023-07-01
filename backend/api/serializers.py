@@ -116,7 +116,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
 
 
 class IngredientInRecipeSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(
+    id = serializers.IntegerField(
         source='ingredient.id',
     )
     name = serializers.ReadOnlyField(
