@@ -1,7 +1,7 @@
 from django.db.models import Sum
 from django.shortcuts import HttpResponse, get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import exceptions, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -105,92 +105,81 @@ class SubscribeAPIView(APIView):
 
 
 class AddRemoveFromListMixin:
-    item_model = None
-    item_field = None
-    owner_field = None
-    error_message_add = None
-    error_message_remove = None
-
-    def perform_action(self, request, recipe_id, error_message):
-        item_model = self.item_model
-        item_field = self.item_field
-        owner_field = self.owner_field
-        user = request.user
-        recipe = get_object_or_404(Recipe, pk=recipe_id)
-        if item_model.objects.filter(
-            **{item_field: recipe, owner_field: user}
-        ).exists():
-            raise exceptions.ValidationError(error_message)
-        item_model.objects.create(
-            **{item_field: recipe, owner_field: user}
-        )
-        return Response(status=status.HTTP_201_CREATED)
-
-    @action(
-        detail=True,
-        methods=['POST'],
-        permission_classes=[IsAuthenticated]
-    )
-    def add(self, request, pk=None):
-        error_message = self.error_message_add
-        return self.perform_action(request, pk, error_message)
-
-    @action(
-        detail=True,
-        methods=['DELETE'],
-        permission_classes=[IsAuthenticated]
-    )
-    def remove(self, request, pk=None):
-        error_message = self.error_message_remove
-        item_model = self.item_model
-        item_field = self.item_field
-        owner_field = self.owner_field
-        user = request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if not item_model.objects.filter(
-            **{item_field: recipe, owner_field: user}
+    def perform_action(
+        self, queryset, item_field, owner_field, item, owner, error_message
+    ):
+        if not queryset.filter(
+            **{item_field: item, owner_field: owner}
         ).exists():
             return Response(
                 {'errors': error_message},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        item_model.objects.filter(
-            **{item_field: recipe, owner_field: user}
-        ).delete()
+        queryset.get(**{item_field: item, owner_field: owner}).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class FavoriteViewSet(AddRemoveFromListMixin, viewsets.ModelViewSet):
-    queryset = Favorite.objects.all()
-    serializer_class = FavoriteRecipeSerializer
-    permission_classes = [IsAuthenticated]
-    item_model = Favorite
-    item_field = 'recipe'
-    owner_field = 'user'
-    error_message_add = 'Рецепт уже есть в избранном.'
-    error_message_remove = 'Рецепта нет в избранном.'
+    @action(methods=('delete',), detail=True)
+    def delete(self, request, recipe_id):
+        item = self.kwargs.get('recipe_id')
+        owner = self.request.user
+        queryset = self.get_queryset()
+        item_field = self.item_field
+        owner_field = self.owner_field
+        error_message = self.error_message
+        return self.perform_action(
+            queryset,
+            item_field,
+            owner_field,
+            item, owner,
+            error_message
+        )
 
 
 class ShoppingCartViewSet(AddRemoveFromListMixin, CreateDestroyViewSet):
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer
-    permission_classes = [IsAuthenticated]
-    item_model = ShoppingCart
+    error_message = 'Рецепт не добавлен в список покупок'
     item_field = 'recipe'
-    owner_field = 'user'
-    error_message_add = 'Рецепт уже есть в списке покупок.'
-    error_message_remove = 'Рецепта нет в списке покупок.'
+    owner_field = 'cart_owner'
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        recipe = get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
+        context.update({'recipe': recipe})
+        context.update({'owner': self.request.user})
+        return context
+
+
+class FavoriteViewSet(AddRemoveFromListMixin, viewsets.ModelViewSet):
+    queryset = Favorite.objects.all()
+    serializer_class = FavoriteRecipeSerializer
+    permission_classes = (IsAuthenticated,)
+    item_field = 'recipe'
+    owner_field = 'recipe_lover'
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'recipe': self.kwargs.get('recipe_id')})
+        return context
+
+    def perform_create(self, serializer):
+        recipe = get_object_or_404(
+            Recipe,
+            pk=self.kwargs.get('recipe_id'),
+        )
+        serializer.save(
+            recipe_lover=self.request.user, recipe=recipe)
 
 
 class DownloadShoppingCart(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        if not ShoppingCart.objects.filter(user=request.user).exists():
+        if not ShoppingCart.objects.filter(cart_owner=request.user).exists():
             return Response({'errors': 'в списке покупок ничего нет'},
                             status=status.HTTP_400_BAD_REQUEST)
         rec_pk = ShoppingCart.objects.filter(
-            user=request.user).values('recipe_id')
+            cart_owner=request.user).values('recipe_id')
         ingredients = IngredientInRecipe.objects.filter(
             recipe_id__in=rec_pk).values(
                 'ingredient__name', 'ingredient__measurement_unit').annotate(
@@ -212,11 +201,11 @@ class DownloadShoppingCart(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        if not ShoppingCart.objects.filter(user=request.user).exists():
+        if not ShoppingCart.objects.filter(cart_owner=request.user).exists():
             return Response({'errors': 'в списке покупок ничего нет'},
                             status=status.HTTP_400_BAD_REQUEST)
         rec_pk = ShoppingCart.objects.filter(
-            user=request.user).values('recipe_id')
+            cart_owner=request.user).values('recipe_id')
         ingredients = IngredientInRecipe.objects.filter(
             recipe_id__in=rec_pk).values(
                 'ingredient__name', 'ingredient__measurement_unit').annotate(
