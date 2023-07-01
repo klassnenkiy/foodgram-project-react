@@ -71,7 +71,7 @@ jobs:
           sudo docker-compose rm frontend
           rm .env
           touch .env
-          echo DEBUG=${{ secrets.DEBUG }} >> .env
+          echo DEBUG=${{ secrets.DEBUG1 }} >> .env
           echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
           echo ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }} >> .env
           echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
