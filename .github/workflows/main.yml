@@ -1,6 +1,6 @@
 name: Foodgram Workflow
 
-on: [push]
+on: [рush]
 
 jobs:
   tests:
