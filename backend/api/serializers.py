@@ -191,11 +191,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         validate_tags(tags, Tag)
         validate_ingredients(ingredients, Ingredient)
         validate_cooking_time(cooking_time)
-        data.update({ 
-            'tags': tags, 
-            'ingredients': ingredients, 
-            'author': self.context.get('request').user 
-        }) 
+        data.update({
+            'tags': tags,
+            'ingredients': ingredients,
+            'author': self.context.get('request').user
+        })
         return data
 
     def create(self, validated_data):
