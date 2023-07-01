@@ -181,8 +181,8 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """с дата не получилось"""
-        tags = self.initial_data.get('tags')
-        ingredients = self.initial_data.get('ingredients')
+        tags = data.get('tags')
+        ingredients = data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
         if not tags:
