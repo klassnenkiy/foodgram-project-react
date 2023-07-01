@@ -181,12 +181,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags = data.get('tags')
         ingredients = data.get('ingredients')
         cooking_time = data.get('cooking_time')
-        if not tags:
-            raise serializers.ValidationError({
-                'tags': 'Кажется вы забыли указать тэги'})
-        if not ingredients:
-            raise serializers.ValidationError({
-                'ingredients': 'Кажется вы забыли указать ингредиенты'})
         validate_tags(tags, Tag)
         validate_ingredients(ingredients, Ingredient)
         validate_cooking_time(cooking_time)
