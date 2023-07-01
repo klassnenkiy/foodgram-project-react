@@ -178,8 +178,9 @@ class RecipeSerializer(serializers.ModelSerializer):
             recipe=obj, cart_owner=request.user).exists()
 
     def validate(self, data):
-        tags = self.data.get('tags')
-        ingredients =  self.data.get('ingredients')
+        print("Received data:", data)
+        tags = data.get('tags')
+        ingredients = data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
         if not tags or len(tags) == 0:
