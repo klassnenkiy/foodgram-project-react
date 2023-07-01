@@ -178,11 +178,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             recipe=obj, user=request.user).exists()
 
     def validate(self, data):
-        """с data не работает, не смог, с двумя сериализаторами попробовал,
-        но не дает создать. скорей всего будет работать, если переписать
-         все под рецепты вообще. но это опять совсем другой код будет"""
-        tags = self.initial_data.get('tags')
-        ingredients = self.initial_data.get('ingredients')
+        tags = data.get('tags')
+        ingredients = data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
         if not tags:
@@ -194,11 +191,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         validate_tags(tags, Tag)
         validate_ingredients(ingredients, Ingredient)
         validate_cooking_time(cooking_time)
-        data.update({
-            'tags': tags,
-            'ingredients': ingredients,
-            'author': self.context.get('request').user
-        })
         return data
 
     def create(self, validated_data):
