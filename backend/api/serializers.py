@@ -9,6 +9,8 @@ from .validators import (validate_cooking_time, validate_ingredients,
 
 
 class TagSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+
     class Meta:
         model = Tag
         fields = (
