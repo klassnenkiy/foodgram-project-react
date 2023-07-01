@@ -180,6 +180,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             recipe=obj, cart_owner=request.user).exists()
 
     def validate(self, data):
+        """с дата не получилось"""
         tags = self.initial_data.get('tags')
         ingredients = self.initial_data.get('ingredients')
         cooking_time = data.get('cooking_time')
