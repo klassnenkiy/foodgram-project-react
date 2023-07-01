@@ -43,7 +43,7 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         user = self.context.get('request').user
         recipe = self.context.get('recipe')
-        if Favorite.objects.filter(recipe_lover=user, recipe=recipe).exists():
+        if Favorite.objects.filter(user=user, recipe=recipe).exists():
             raise serializers.ValidationError({
                 'errors': 'Рецепт уже в избранном'})
         return data
@@ -149,9 +149,7 @@ class RecipeToRepresentationSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
-    tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(), many=True
-    )
+    tags = TagSerializer(read_only=True, many=True)
     ingredients = IngredientInRecipeSerializer(many=True)
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
@@ -170,16 +168,19 @@ class RecipeSerializer(serializers.ModelSerializer):
         if not request or request.user.is_anonymous:
             return False
         return Favorite.objects.filter(
-            recipe=obj, recipe_lover=request.user).exists()
+            recipe=obj, user=request.user).exists()
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
         return ShoppingCart.objects.filter(
-            recipe=obj, cart_owner=request.user).exists()
+            recipe=obj, user=request.user).exists()
 
     def validate(self, data):
+        """с data не работает, не смог, с двумя сериализаторами попробовал,
+        но не дает создать. скорей всего будет работать, если переписать
+         все под рецепты вообще. но это опять совсем другой код будет"""
         tags = self.initial_data.get('tags')
         ingredients = self.initial_data.get('ingredients')
         cooking_time = data.get('cooking_time')
@@ -237,15 +238,15 @@ class RecipeSerializer(serializers.ModelSerializer):
 class ShoppingCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCart
-        fields = ('cart_owner', 'recipe')
-        read_only_fields = ('cart_owner', 'recipe')
+        fields = ('user', 'recipe')
+        read_only_fields = ('user', 'recipe')
 
     def validate(self, data):
-        cart_owner = self.context.get('request').user
+        user = self.context.get('request').user
         recipe = self.context.get('recipe')
         data['recipe'] = recipe
-        data['cart_owner'] = cart_owner
-        if ShoppingCart.objects.filter(cart_owner=cart_owner,
+        data['user'] = user
+        if ShoppingCart.objects.filter(user=user,
                                        recipe=recipe).exists():
             raise serializers.ValidationError({
                 'errors': 'Рецепт уже в списке покупок'})
