@@ -9,8 +9,6 @@ from .validators import (validate_cooking_time, validate_ingredients,
 
 
 class TagSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-
     class Meta:
         model = Tag
         fields = (
@@ -19,7 +17,6 @@ class TagSerializer(serializers.ModelSerializer):
             'color',
             'slug'
         )
-        read_only_fields = ('id',)
 
 
 class FavoriteRecipeSerializer(serializers.ModelSerializer):
@@ -60,7 +57,6 @@ class IngredientSerializer(serializers.ModelSerializer):
             'name',
             'measurement_unit'
         )
-        read_only_fields = ('id',)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -153,7 +149,7 @@ class RecipeToRepresentationSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
-    tags = TagSerializer(many=True)
+    tags = TagSerializer(read_only=True, many=True)
     ingredients = IngredientInRecipeSerializer(many=True)
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
@@ -182,10 +178,11 @@ class RecipeSerializer(serializers.ModelSerializer):
             recipe=obj, cart_owner=request.user).exists()
 
     def validate(self, data):
-        tags = self.initial_data.get('tags')
+        tags = data.get('tags')
         ingredients = data.get('ingredients')
         cooking_time = data.get('cooking_time')
-        if not tags or len(tags) == 0:
+
+        if not tags:
             raise serializers.ValidationError({
                 'tags': 'Кажется вы забыли указать тэги'})
         if not ingredients:
