@@ -178,11 +178,11 @@ class RecipeSerializer(serializers.ModelSerializer):
             recipe=obj, cart_owner=request.user).exists()
 
     def validate(self, data):
-        tags = data.get('tags')
-        ingredients = data.get('ingredients')
+        tags = self.data.get('tags')
+        ingredients =  self.data.get('ingredients')
         cooking_time = data.get('cooking_time')
 
-        if not tags:
+        if not tags or len(tags) == 0:
             raise serializers.ValidationError({
                 'tags': 'Кажется вы забыли указать тэги'})
         if not ingredients:
