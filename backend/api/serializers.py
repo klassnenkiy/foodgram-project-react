@@ -43,7 +43,7 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         user = self.context.get('request').user
         recipe = self.context.get('recipe')
-        if Favorite.objects.filter(user=user, recipe=recipe).exists():
+        if Favorite.objects.filter(recipe_lover=user, recipe=recipe).exists():
             raise serializers.ValidationError({
                 'errors': 'Рецепт уже в избранном'})
         return data
@@ -163,27 +163,27 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author',
             'ingredients', 'is_favorited',
             'is_in_shopping_cart', 'name',
-            'image', 'text', 'cooking_time'
-        )
+            'image', 'text', 'cooking_time')
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
         return Favorite.objects.filter(
-            recipe=obj, user=request.user).exists()
+            recipe=obj, recipe_lover=request.user).exists()
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
         return ShoppingCart.objects.filter(
-            recipe=obj, user=request.user).exists()
+            recipe=obj, cart_owner=request.user).exists()
 
     def validate(self, data):
-        tags = data.get('tags')
-        ingredients = data.get('ingredients')
+        tags = self.initial_data.get('tags')
+        ingredients = self.initial_data.get('ingredients')
         cooking_time = data.get('cooking_time')
+
         if not tags:
             raise serializers.ValidationError({
                 'tags': 'Кажется вы забыли указать тэги'})
@@ -237,15 +237,15 @@ class RecipeSerializer(serializers.ModelSerializer):
 class ShoppingCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCart
-        fields = ('user', 'recipe')
-        read_only_fields = ('user', 'recipe')
+        fields = ('cart_owner', 'recipe')
+        read_only_fields = ('cart_owner', 'recipe')
 
     def validate(self, data):
-        user = self.context.get('request').user
+        cart_owner = self.context.get('request').user
         recipe = self.context.get('recipe')
         data['recipe'] = recipe
-        data['user'] = user
-        if ShoppingCart.objects.filter(user=user,
+        data['cart_owner'] = cart_owner
+        if ShoppingCart.objects.filter(cart_owner=cart_owner,
                                        recipe=recipe).exists():
             raise serializers.ValidationError({
                 'errors': 'Рецепт уже в списке покупок'})
