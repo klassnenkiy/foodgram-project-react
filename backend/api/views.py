@@ -10,8 +10,9 @@ from rest_framework.views import APIView
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe, User
+
 from .filters import IngredientSearchFilter, RecipeFilter
-from .mixins import CreateDestroyViewSet
+from .mixins import CreateDestroyViewSet, DeleteActionMixin
 from .paginators import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
@@ -104,58 +105,10 @@ class SubscribeAPIView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class AddRemoveFromListMixin:
-    def perform_action(
-        self, queryset, item_field, owner_field, item, owner, error_message
-    ):
-        if not queryset.filter(
-            **{item_field: item, owner_field: owner}
-        ).exists():
-            return Response(
-                {'errors': error_message},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        queryset.get(**{item_field: item, owner_field: owner}).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @action(methods=('delete',), detail=True)
-    def delete(self, request, recipe_id):
-        item = self.kwargs.get('recipe_id')
-        owner = self.request.user
-        queryset = self.get_queryset()
-        item_field = self.item_field
-        owner_field = self.owner_field
-        error_message = self.error_message
-        return self.perform_action(
-            queryset,
-            item_field,
-            owner_field,
-            item, owner,
-            error_message
-        )
-
-
-class ShoppingCartViewSet(AddRemoveFromListMixin, CreateDestroyViewSet):
-    queryset = ShoppingCart.objects.all()
-    serializer_class = ShoppingCartSerializer
-    error_message = 'Рецепт не добавлен в список покупок'
-    item_field = 'recipe'
-    owner_field = 'cart_owner'
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        recipe = get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
-        context.update({'recipe': recipe})
-        context.update({'owner': self.request.user})
-        return context
-
-
-class FavoriteViewSet(AddRemoveFromListMixin, viewsets.ModelViewSet):
+class FavoriteViewSet(viewsets.ModelViewSet):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteRecipeSerializer
     permission_classes = (IsAuthenticated,)
-    item_field = 'recipe'
-    owner_field = 'recipe_lover'
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -170,6 +123,47 @@ class FavoriteViewSet(AddRemoveFromListMixin, viewsets.ModelViewSet):
         serializer.save(
             recipe_lover=self.request.user, recipe=recipe)
 
+    @action(methods=('delete',), detail=True)
+    def delete(self, request, recipe_id):
+        recipe = self.kwargs.get('recipe_id')
+        recipe_lover = self.request.user
+        if not Favorite.objects.filter(recipe=recipe,
+                                       recipe_lover=recipe_lover).exists():
+            return Response({'errors': 'Рецепт удален из избранного'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        get_object_or_404(
+            Favorite,
+            recipe_lover=recipe_lover,
+            recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ShoppingCartViewSet(CreateDestroyViewSet, DeleteActionMixin):
+    queryset = ShoppingCart.objects.all()
+    serializer_class = ShoppingCartSerializer
+    error_message = 'Рецепт не добавлен в список покупок'
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        recipe = get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
+        context.update({'recipe': recipe})
+        context.update({'owner': self.request.user})
+        return context
+
+    @action(methods=('delete',), detail=True)
+    def delete(self, request, recipe_id):
+        recipe = self.kwargs.get('recipe_id')
+        cart_owner = self.request.user
+        if not ShoppingCart.objects.filter(recipe=recipe,
+                                           cart_owner=cart_owner).exists():
+            return Response({'errors': 'Рецепт не добавлен в список покупок'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        get_object_or_404(
+            ShoppingCart,
+            cart_owner=cart_owner,
+            recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class DownloadShoppingCart(APIView):
     permission_classes = (IsAuthenticated,)
@@ -183,12 +177,12 @@ class DownloadShoppingCart(APIView):
         ingredients = IngredientInRecipe.objects.filter(
             recipe_id__in=rec_pk).values(
                 'ingredient__name', 'ingredient__measurement_unit').annotate(
-                    total_amount=Sum('amount')).order_by()
+                    amount=Sum('amount')).order_by()
 
         text = 'Список покупок:\n\n'
         for item in ingredients:
             text += (f'{item["ingredient__name"]}: '
-                     f'{item["total_amount"]} '
+                     f'{item["amount"]} '
                      f'{item["ingredient__measurement_unit"]}\n')
 
         response = HttpResponse(text, content_type='text/plain')
