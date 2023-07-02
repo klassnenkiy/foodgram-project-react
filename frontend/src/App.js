@@ -69,10 +69,10 @@ function App() {
   }
 
   const authorization = ({
-    email, password
+    username, password
   }) => {
     api.signin({
-      email, password
+      username, password
     }).then(res => {
       if (res.auth_token) {
         localStorage.setItem('token', res.auth_token)
