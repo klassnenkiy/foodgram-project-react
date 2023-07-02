@@ -31,14 +31,14 @@ class Api {
     })
   }
 
-  signin ({ email, password }) {
+  signin ({ username, password }) {
     return fetch(
       '/api/auth/token/login/',
       {
         method: 'POST',
         headers: this._headers,
         body: JSON.stringify({
-          email, password
+          username, password
         })
       }
     ).then(this.checkResponse)
