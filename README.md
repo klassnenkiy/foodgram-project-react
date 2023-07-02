@@ -90,7 +90,7 @@ docker compose exec backend python manage.py createsuperuser
 docker compose exec backend python manage.py collectstatic
 ```
 * Автор:
-Станислав Тюлягин 
+Станислав Тюлягин
 
 * Ревьюер: 
 Михаил Иванов
